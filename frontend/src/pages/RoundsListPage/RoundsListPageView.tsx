@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import { Box, Button, CircularProgress, Typography, Alert } from '@mui/material';
 import { PageLayout } from '@/components/PageLayout';
 import { RoundListItem } from '@/components/RoundListItem';
@@ -18,7 +19,7 @@ export const RoundsListPageView = ({
 }: RoundsListPageViewProps) => {
     const isAdmin = user?.role === 'ADMIN';
 
-    const headerContent = (
+    const headerContent = useMemo(() => (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Typography 
               variant="body1" 
@@ -48,7 +49,7 @@ export const RoundsListPageView = ({
                 Выйти
             </Button>
         </Box>
-    );
+    ), [user?.username, onLogout]);
 
   return (
     <PageLayout title="Список Раундов" headerContent={headerContent}>

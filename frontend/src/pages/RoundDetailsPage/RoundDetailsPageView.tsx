@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Box, Typography, Divider, Button, keyframes } from '@mui/material';
 import { PageLayout } from '@/components/PageLayout';
 import { Round, RoundStatus, PlayerScore } from '@/types/round';
@@ -35,11 +35,11 @@ const CompletedRoundView = ({ round, currentUser }: { round: Round, currentUser:
 };
 
 const CooldownView = ({ round }: { round: Round }) => {
-  const calculateRemainingTime = () => {
+  const calculateRemainingTime = useCallback(() => {
     const now = new Date().getTime();
     const startsAt = new Date(round.startsAt).getTime();
     return Math.max(0, startsAt - now);
-  };
+  }, [round.startsAt]);
 
   const [remainingTime, setRemainingTime] = useState(calculateRemainingTime);
 
@@ -48,14 +48,14 @@ const CooldownView = ({ round }: { round: Round }) => {
       setRemainingTime(calculateRemainingTime());
     }, 1000);
     return () => clearInterval(timer);
-  }, [round.startsAt]);
+  }, [calculateRemainingTime]);
 
-  const formatTime = (ms: number) => {
+  const formatTime = useCallback((ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
     const seconds = (totalSeconds % 60).toString().padStart(2, '0');
     return `${minutes}:${seconds}`;
-  };
+  }, []);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
@@ -82,6 +82,17 @@ const tapAnimation = keyframes`
 `;
 
 const ActiveRoundView = ({ round, currentUser, onTap }: { round: Round; currentUser: User | null; onTap: () => void; }) => {
+  const formatTime = useCallback((ms: number) => {
+    const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }, []);
+
+  const myScore = useMemo(() => {
+    return round.playerScores.find(p => p.userId === currentUser?.id)?.score || 0;
+  }, [round.playerScores, currentUser?.id]);
+
   const [remainingTime, setRemainingTime] = useState(new Date(round.endsAt).getTime() - new Date().getTime());
 
   useEffect(() => {
@@ -90,15 +101,6 @@ const ActiveRoundView = ({ round, currentUser, onTap }: { round: Round; currentU
     }, 1000);
     return () => clearInterval(timer);
   }, [round.endsAt]);
-
-  const formatTime = (ms: number) => {
-    const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
-    const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
-    const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-    return `${minutes}:${seconds}`;
-  };
-
-  const myScore = round.playerScores.find(p => p.userId === currentUser?.id)?.score || 0;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, textAlign: 'center' }}>
